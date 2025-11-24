@@ -18,7 +18,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.16.0'
+          channel: stable   # optional if version already implies stable
 
       # Enable Windows desktop support
       - name: Enable Windows Desktop

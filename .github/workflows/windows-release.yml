@@ -1,0 +1,61 @@
+name: Build Flutter Windows Release
+
+on:
+  push:
+    tags:
+      - 'win*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Set up Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # Enable Windows desktop support
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      # Get dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Build release
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      # Zip artifact
+      - name: Zip build
+        run: |
+          powershell Compress-Archive `
+            -Path build\windows\x64\runner\Release\* `
+            -DestinationPath flutter-windows-release.zip -Force
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload asset
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: ngeuvid-windows-release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -63,46 +63,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         body: BlocConsumer<ProcessCubit, ProcessState>(
-          listener: (context, state) {
-            if (state is OnFfmpegSelected) {
-              ffmpegPath = state.path;
-            }
-
-            if (state is OnVideoSelected) {
-              selectedVideos = state.files;
-            }
-
-            if (state is OnBroadcastMessage) {
-              resultMessage.add(state.message);
-            }
-
-            if (state is OnProcessFinished) {
-              const snackBar = SnackBar(
-                content: Text('Gues beres'),
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(snackBar);
-            }
-
-            if (state is OnProcessFailed) {
-              const snackBar = SnackBar(
-                content: Text(
-                  'Gagal euy',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                backgroundColor: Colors.red,
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(snackBar);
-            }
-
-            if (state is OnOutputDirSelected) {
-              outputPath = state.path;
-            }
-          },
+          listener: processStateListener,
           builder: (context, state) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -153,6 +114,47 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void processStateListener(context, state) {
+    if (state is OnFfmpegSelected) {
+      ffmpegPath = state.path;
+    }
+
+    if (state is OnVideoSelected) {
+      selectedVideos = state.files;
+    }
+
+    if (state is OnBroadcastMessage) {
+      resultMessage.add(state.message);
+    }
+
+    if (state is OnProcessFinished) {
+      const snackBar = SnackBar(
+        content: Text('Geus beres'),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
+    if (state is OnProcessFailed) {
+      const snackBar = SnackBar(
+        content: Text(
+          'Gagal euy',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.red,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
+    if (state is OnOutputDirSelected) {
+      outputPath = state.path;
+    }
   }
 
   void pilihLokasiFfmpeg(ProcessCubit cubit) async {

@@ -45,7 +45,7 @@ jobs:
         run: |
           powershell Compress-Archive `
             -Path build\windows\x64\runner\Release\* `
-            -DestinationPath flutter-windows-release.zip -Force
+            -DestinationPath ngeuvid-windows-release.zip -Force
 
       # Create GitHub Release
       - name: Create GitHub Release

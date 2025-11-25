@@ -10,9 +10,10 @@ import 'package:localstorage/localstorage.dart';
 import 'package:ngeuvid/main.dart';
 import 'package:ngeuvid/modules/home/cubit/process_cubit.dart';
 import 'package:ngeuvid/modules/home/widget/drag_and_preview_section.dart';
+import 'package:ngeuvid/modules/home/widget/duration_section.dart';
 import 'package:ngeuvid/modules/home/widget/ffmpeg_location_section.dart';
-import 'package:ngeuvid/modules/home/widget/log_output_section.dart';
 import 'package:ngeuvid/modules/home/widget/output_location_section.dart';
+import 'package:ngeuvid/modules/home/widget/start_button_section.dart';
 import 'package:path/path.dart' as p;
 
 @RoutePage()
@@ -43,6 +44,11 @@ class _HomePageState extends State<HomePage> {
       if (path != null) {
         cubit.setFfmpegPath(path);
       }
+
+      path = storage.getItem("output_path");
+      if (path != null) {
+        cubit.setOnOutputDirSelected(path);
+      }
     });
   }
 
@@ -64,52 +70,48 @@ class _HomePageState extends State<HomePage> {
         ),
         body: BlocConsumer<ProcessCubit, ProcessState>(
           listener: processStateListener,
-          builder: (context, state) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                FfmpedLocationSection(
-                  onPressed: () => pilihLokasiFfmpeg(cubit),
-                  path: ffmpegPath,
+          builder: (context, state) => Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 460,
+                child: Column(
+                  children: [
+                    FfmpedLocationSection(
+                      onPressed: () => pilihLokasiFfmpeg(cubit),
+                      path: ffmpegPath,
+                    ),
+                    DurationSection(
+                      segmentTimeController: segmentTimeController,
+                    ),
+                    OutputLocationSection(
+                      outputPath: outputPath,
+                      onPressed: pilihDirOutput,
+                    ),
+                    StartButtonSection(
+                      onPressed: () => runCommand(cubit),
+                      onProcessing: state is OnProcessing,
+                    ),
+                  ],
                 ),
-                Divider(height: 0, color: Colors.blue[200]),
-                DragAndPreviewSection(
-                  items: selectedVideos,
-                  onPressed: () => pilihVideo(cubit),
+              ),
+              Container(
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 40),
+                color: const Color.fromARGB(255, 74, 74, 74),
+              ),
+              SizedBox(
+                width: 460,
+                child: Column(
+                  children: [
+                    DragAndPreviewSection(
+                      items: selectedVideos,
+                      onPressed: () => pilihVideo(cubit),
+                    ),
+                  ],
                 ),
-                Divider(height: 0, color: Colors.blue[200]),
-                OutputLocationSection(
-                  outputPath: outputPath,
-                  textEditingController: segmentTimeController,
-                  onPressed: pilihDirOutput,
-                ),
-                Divider(height: 0, color: Colors.blue[200]),
-                Container(
-                  height: 120,
-                  padding: const EdgeInsets.all(10),
-                  color: Colors.blue[100],
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      state is OnProcessing
-                          ? const CircularProgressIndicator()
-                          : FilledButton(
-                              onPressed: () => runCommand(cubit),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.play_arrow),
-                                  SizedBox(width: 5),
-                                  Text("Mulai"),
-                                ],
-                              ),
-                            ),
-                    ],
-                  ),
-                ),
-                Divider(height: 0, color: Colors.blue[200]),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -172,7 +174,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> pilihVideo(ProcessCubit cubit) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.video);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.video,
+      allowMultiple: true,
+    );
     if (result == null) {
       return;
     }
@@ -192,8 +197,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    log("Path $result");
-
+    final storage = getIt<LocalStorage>();
+    storage.ready.then((_) => storage.setItem("output_path", result));
     cubit.setOnOutputDirSelected(result);
   }
 
@@ -229,6 +234,10 @@ class _HomePageState extends State<HomePage> {
 
   runCommand(ProcessCubit cubit) async {
     var command = buildCommand();
+    if (selectedVideos.isEmpty) {
+      return;
+    }
+
     cubit.setOnProcessing();
     for (var com in command) {
       try {

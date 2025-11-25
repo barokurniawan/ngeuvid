@@ -13,25 +13,22 @@ class FfmpedLocationSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
-      color: Colors.blue[100],
-      height: 80,
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(5),
       child: Row(
         children: [
-          const Text("Lokasi FFMPEG :"),
+          const Text('Lokasi FFMPEG'),
           const Spacer(),
           SizedBox(
-            width: 220,
+            width: 230,
             child: Text(
-              path == null ? "" : path.toString(),
+              path ?? "",
               overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11),
             ),
           ),
-          const Spacer(),
-          OutlinedButton(
-            onPressed: onPressed,
-            child: const Text("Pilih"),
-          )
+          const SizedBox(width: 10),
+          IconButton(onPressed: onPressed, icon: const Icon(Icons.folder_open))
         ],
       ),
     );

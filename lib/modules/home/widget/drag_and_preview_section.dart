@@ -1,10 +1,8 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:ngeuvid/modules/home/entities/selected_video.dart';
 
 class DragAndPreviewSection extends StatelessWidget {
-  final List<File> items;
+  final List<SelectedVideo> items;
   final void Function()? onPressed;
 
   const DragAndPreviewSection({
@@ -26,8 +24,6 @@ class DragAndPreviewSection extends StatelessWidget {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items.elementAt(index);
-                      final fileSize = ((item.lengthSync() / 1024) / 1024)
-                          .toStringAsFixed(3);
 
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -43,7 +39,7 @@ class DragAndPreviewSection extends StatelessWidget {
                             ),
                             const Spacer(),
                             Text(
-                              "${fileSize}Mb",
+                              item.duration,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,

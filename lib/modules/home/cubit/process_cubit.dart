@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:ngeuvid/modules/home/entities/selected_video.dart';
 
 part 'process_state.dart';
 
@@ -12,12 +13,16 @@ class ProcessCubit extends Cubit<ProcessState> {
     emit(OnProcessing());
   }
 
-  void setFfmpegPath(String? path) {
-    emit(OnFfmpegSelected(path));
+  void setFfmpegPath(String? ffmpeg, String? ffprobe) {
+    emit(OnFfmpegSelected(ffmpeg, ffprobe));
   }
 
-  void setVideos(List<File> files) {
+  void setVideos(List<SelectedVideo> files) {
     emit(OnVideoSelected(files));
+  }
+
+  void setProcessingVideoSelected() {
+    emit(OnProcessingVideoSelected());
   }
 
   void setSegmentTime(String segmentTime) {

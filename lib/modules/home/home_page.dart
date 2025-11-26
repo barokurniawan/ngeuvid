@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:localstorage/localstorage.dart';
+import 'package:ngeuvid/helpers/format_duration.dart';
+import 'package:ngeuvid/helpers/video_duration_ffprobe.dart';
 import 'package:ngeuvid/main.dart';
 import 'package:ngeuvid/modules/home/cubit/process_cubit.dart';
+import 'package:ngeuvid/modules/home/entities/selected_video.dart';
 import 'package:ngeuvid/modules/home/widget/drag_and_preview_section.dart';
 import 'package:ngeuvid/modules/home/widget/duration_section.dart';
 import 'package:ngeuvid/modules/home/widget/ffmpeg_location_section.dart';
@@ -26,8 +29,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String? ffmpegPath;
+  String? ffprobePath;
   String outputPath = "D:\\storage";
-  List<File> selectedVideos = [];
+  List<SelectedVideo> selectedVideos = [];
   String segmentTime = "00:00:30";
   List<String> resultMessage = [];
   late TextEditingController segmentTimeController;
@@ -40,12 +44,13 @@ class _HomePageState extends State<HomePage> {
 
     final storage = getIt<LocalStorage>();
     storage.ready.then((value) {
-      var path = storage.getItem("ffmpeg_path");
-      if (path != null) {
-        cubit.setFfmpegPath(path);
+      var ffmpeg = storage.getItem("ffmpeg_path");
+      var ffprobe = storage.getItem("ffprobe_path");
+      if (ffmpeg != null) {
+        cubit.setFfmpegPath(ffmpeg, ffprobe);
       }
 
-      path = storage.getItem("output_path");
+      var path = storage.getItem("output_path");
       if (path != null) {
         cubit.setOnOutputDirSelected(path);
       }
@@ -104,10 +109,14 @@ class _HomePageState extends State<HomePage> {
                 width: 460,
                 child: Column(
                   children: [
-                    DragAndPreviewSection(
-                      items: selectedVideos,
-                      onPressed: () => pilihVideo(cubit),
-                    ),
+                    state is OnProcessingVideoSelected
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : DragAndPreviewSection(
+                            items: selectedVideos,
+                            onPressed: () => pilihVideo(cubit),
+                          ),
                   ],
                 ),
               ),
@@ -120,7 +129,8 @@ class _HomePageState extends State<HomePage> {
 
   void processStateListener(context, state) {
     if (state is OnFfmpegSelected) {
-      ffmpegPath = state.path;
+      ffmpegPath = state.ffmpegPath;
+      ffprobePath = state.ffprobePath;
     }
 
     if (state is OnVideoSelected) {
@@ -160,17 +170,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   void pilihLokasiFfmpeg(ProcessCubit cubit) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    final result = await FilePicker.platform.getDirectoryPath();
     if (result == null) {
       return;
     }
 
-    final ffmpegPath = result.files.elementAt(0).path;
+    final ffmpegPath = p.join(result, "ffmpeg.exe");
+    final ffprobePath = p.join(result, "ffprobe.exe");
     final storage = getIt<LocalStorage>();
-    storage.ready.then((_) => storage.setItem("ffmpeg_path", ffmpegPath));
+    storage.ready.then((_) {
+      storage.setItem("ffmpeg_path", ffmpegPath);
+      storage.setItem("ffprobe_path", ffprobePath);
+    });
 
-    log("path: $ffmpegPath");
-    cubit.setFfmpegPath(ffmpegPath);
+    cubit.setFfmpegPath(ffmpegPath, ffprobePath);
   }
 
   Future<void> pilihVideo(ProcessCubit cubit) async {
@@ -182,13 +195,32 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    if (ffprobePath == null || ffprobePath!.isEmpty) {
+      return;
+    }
+
+    cubit.setProcessingVideoSelected();
+
     final files = result.files.nonNulls
         .takeWhile((value) => value.path != null)
         .map((e) => File(e.path!))
         .toList();
-    log("files: ${files.length}");
+    if (files.isEmpty) {
+      return;
+    }
 
-    cubit.setVideos(files);
+    List<SelectedVideo> vids = [];
+    for (var file in files) {
+      final vidDuration = await videoDurationFFProbe(ffprobePath!, file.path);
+      vids.add(
+        SelectedVideo(
+          path: file.path,
+          duration: formatDuration(vidDuration),
+        ),
+      );
+    }
+
+    cubit.setVideos(vids);
   }
 
   Future<void> pilihDirOutput() async {

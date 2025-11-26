@@ -23,7 +23,7 @@ final class OnProcessFailed extends ProcessState {
 }
 
 final class OnVideoSelected extends ProcessState {
-  final List<File> files;
+  final List<SelectedVideo> files;
 
   const OnVideoSelected(this.files);
 
@@ -31,13 +31,16 @@ final class OnVideoSelected extends ProcessState {
   List<Object?> get props => [files];
 }
 
-final class OnFfmpegSelected extends ProcessState {
-  final String? path;
+final class OnProcessingVideoSelected extends ProcessState {}
 
-  const OnFfmpegSelected(this.path);
+final class OnFfmpegSelected extends ProcessState {
+  final String? ffmpegPath;
+  final String? ffprobePath;
+
+  const OnFfmpegSelected(this.ffmpegPath, this.ffprobePath);
 
   @override
-  List<Object?> get props => [path];
+  List<Object?> get props => [ffmpegPath, ffprobePath];
 }
 
 final class OnSegmentTimeChange extends ProcessState {

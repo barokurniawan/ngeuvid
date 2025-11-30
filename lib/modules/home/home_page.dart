@@ -175,8 +175,15 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final ffmpegPath = p.join(result, "ffmpeg.exe");
-    final ffprobePath = p.join(result, "ffprobe.exe");
+    var ffmpegExePath = p.join(result, "ffmpeg.exe");
+    var ffprobeExePath = p.join(result, "ffprobe.exe");
+    if (Platform.isLinux) {
+      ffmpegExePath = p.join(result, "ffmpeg");
+      ffprobeExePath = p.join(result, "ffprobe");
+    }
+
+    final ffmpegPath = p.join(result, ffmpegExePath);
+    final ffprobePath = p.join(result, ffprobeExePath);
     final storage = getIt<LocalStorage>();
     storage.ready.then((_) {
       storage.setItem("ffmpeg_path", ffmpegPath);

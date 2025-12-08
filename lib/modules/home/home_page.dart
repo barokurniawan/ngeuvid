@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:ngeuvid/helpers/format_duration.dart';
+import 'package:ngeuvid/helpers/slugify.dart';
 import 'package:ngeuvid/helpers/video_duration_ffprobe.dart';
 import 'package:ngeuvid/main.dart';
 import 'package:ngeuvid/modules/home/cubit/process_cubit.dart';
@@ -251,24 +252,33 @@ class _HomePageState extends State<HomePage> {
       return [];
     }
 
-    final targetPath = p.join(outputPath!, "output%03d.mp4");
-    return selectedVideos
-        .map((e) => [
-              "-i",
-              e.path,
-              "-c",
-              "copy",
-              "-map",
-              "0",
-              "-segment_time",
-              segmentTimeController.text,
-              "-f",
-              "segment",
-              "-reset_timestamps",
-              "1",
-              targetPath
-            ])
-        .toList();
+    final List<List<String>> coms = [];
+    for (var vid in selectedVideos) {
+      final vidFilename = File(vid.path).uri.pathSegments.last;
+      final vidPath = Directory(p.join(outputPath!, slugify(vidFilename)));
+      if (!vidPath.existsSync()) {
+        vidPath.createSync(recursive: true);
+      }
+
+      final targetPath = p.join(vidPath.path, "output%03d.mp4");
+      coms.add([
+        "-i",
+        vid.path,
+        "-c",
+        "copy",
+        "-map",
+        "0",
+        "-segment_time",
+        segmentTimeController.text,
+        "-f",
+        "segment",
+        "-reset_timestamps",
+        "1",
+        targetPath
+      ]);
+    }
+
+    return coms;
   }
 
   runCommand(ProcessCubit cubit) async {
